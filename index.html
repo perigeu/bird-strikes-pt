@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Portugal Bird-strike Risk</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background: #f4f4f4; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Real-Time Bird-strike Risk Forecast</h1>
+  <label>
+    Airport:
+    <select id="icao-select"></select>
+  </label>
+
+  <h2>XGBoost (30-min) Performance</h2>
+  <table id="xgb-table"></table>
+
+  <h2>5 Future Risk Intervals</h2>
+  <table id="forecast-table"></table>
+
+  <script>
+    let data;
+    fetch("precomputed_portugal_metrics.json")
+      .then(r=>r.json())
+      .then(d=> {
+        data = d;
+        const select = document.getElementById("icao-select");
+        Object.keys(data).sort().forEach(icao=>{
+          let opt = document.createElement("option");
+          opt.value = icao; opt.text = icao;
+          select.appendChild(opt);
+        });
+        select.onchange = renderAll;
+        renderAll();
+      });
+
+    function renderAll() {
+      const icao = document.getElementById("icao-select").value;
+      if (!icao) return;
+      const m = data[icao];
+
+      // 1) XGB table
+      const xgb = m.xgb_metrics;
+      const xt = document.getElementById("xgb-table");
+      xt.innerHTML = `
+        <tr>
+          <th>Accuracy</th><th>Precision</th><th>Recall</th>
+          <th>Specificity</th><th>AUC</th>
+        </tr>
+        <tr>
+          ${[xgb.accuracy, xgb.precision, xgb.recall, xgb.specificity, xgb.auc]
+             .map(v=>`<td>${(+v).toFixed(2)}</td>`).join("")}
+        </tr>`;
+
+      // 2) Forecast table
+      const fc = m.rnn_forecast;
+      const ft = document.getElementById("forecast-table");
+      if (!fc.length) {
+        ft.innerHTML = "<tr><td>No forecast data</td></tr>";
+        return;
+      }
+      ft.innerHTML = `
+        <tr>
+          <th>Start</th><th>End</th>
+          <th>Bird Count</th><th>Bird Strike Prob.</th><th>Risk</th><th>Breakdown</th>
+        </tr>` 
+        + fc.map(intv=>{
+            const [start,end] = intv.time.split("±")[0].split("-").map(t=>t.trim());
+            // assume intv.date is YYYY-MM-DD
+            const S = new Date(intv.date+"T"+start+":00Z");
+            const blocks = Object.keys(intv.breakdown).length;
+            const E = new Date(S.getTime() + blocks*30*60000);
+            return `<tr>
+              <td>${S.toISOString().slice(0,16).replace("T"," ")}</td>
+              <td>${E.toISOString().slice(0,16).replace("T"," ")}</td>
+              <td>${intv.predicted_strike_count}</td>
+              <td>${intv.avg_probability}</td>
+              <td>${intv.risk.toFixed(2)}</td>
+              <td><pre>${Object.entries(intv.breakdown)
+                          .map(([k,v])=>k+":"+v).join("; ")}</pre></td>
+            </tr>`;
+        }).join("");
+    }
+  </script>
+</body>
+</html>
