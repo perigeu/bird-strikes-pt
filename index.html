@@ -68,7 +68,7 @@
       ft.innerHTML = `
         <tr>
           <th>Start</th><th>End</th>
-          <th>Bird Count</th><th>Bird Strike Prob.</th><th>Risk</th><th>Breakdown</th>
+          <th>Bird Count</th><th>Bird Strike Probability</th><th>Risk</th><th>Interval Breakdown</th>
         </tr>` 
         + fc.map(intv=>{
             const [start,end] = intv.time.split("±")[0].split("-").map(t=>t.trim());
