@@ -92,11 +92,11 @@ Level
 
 Physical Meaning
 
-Risk < 2.0 - Low - Minimal collision likelihood—routine vigilance
+Risk < 2.0 - Low - Minimal impact into the aircraft safety
 
-Risk 2.0 – 5.0 - Medium - Elevated risk—consider increased monitoring
+Risk 2.0 – 5.0 - Medium - Elevated risk and safety — consider increased monitoring
 
-Risk > 5.0 - High - Significant risk—implement active mitigation
+Risk > 5.0 - High - Significant risk and safety — implement active mitigation
 
 Intervals are reported until 95% cumulative probability of an event.
 
