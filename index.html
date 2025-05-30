@@ -12,28 +12,30 @@
   </style>
 </head>
 <body>
-  <h1>AI Bird Strike Event Predictor - Portugal</h1>
+  <h1>AI Bird Strike Event Predictor – Portugal</h1>
+
   <label>
     Airport:
     <select id="icao-select"></select>
   </label>
 
-  <h2>XGBoost Machine Learning 30-minutes Performance Metrics</h2>
+  <h2>XGBoost Machine Learning 30-minute Performance Metrics</h2>
   <table id="xgb-table"></table>
 
-  <h2>Recurrent Neural Network Bird Strike Prediction</h2>
+  <h2>Recurrent Neural Network Daily Forecast (00:00–23:59)</h2>
   <table id="forecast-table"></table>
 
   <script>
     let data;
     fetch("precomputed_portugal_metrics.json")
-      .then(r=>r.json())
-      .then(d=> {
+      .then(r => r.json())
+      .then(d => {
         data = d;
         const select = document.getElementById("icao-select");
-        Object.keys(data).sort().forEach(icao=>{
+        Object.keys(data).sort().forEach(icao => {
           let opt = document.createElement("option");
-          opt.value = icao; opt.text = icao;
+          opt.value = icao;
+          opt.text = icao;
           select.appendChild(opt);
         });
         select.onchange = renderAll;
@@ -45,7 +47,7 @@
       if (!icao) return;
       const m = data[icao];
 
-      // 1) XGB table
+      // XGBoost metrics
       const xgb = m.xgb_metrics;
       const xt = document.getElementById("xgb-table");
       xt.innerHTML = `
@@ -55,36 +57,37 @@
         </tr>
         <tr>
           ${[xgb.accuracy, xgb.precision, xgb.recall, xgb.specificity, xgb.auc]
-             .map(v=>`<td>${(+v).toFixed(2)}</td>`).join("")}
+            .map(v => `<td>${(+v).toFixed(2)}</td>`).join("")}
         </tr>`;
 
-      // 2) Forecast table
+      // Forecast rows
       const fc = m.rnn_forecast;
       const ft = document.getElementById("forecast-table");
-      if (!fc.length) {
+      if (!fc || !fc.length) {
         ft.innerHTML = "<tr><td>No forecast data</td></tr>";
         return;
       }
+
       ft.innerHTML = `
         <tr>
           <th>Start</th><th>End</th>
-          <th>Bird Count</th><th>Bird Strike Probability</th><th>Risk</th><th>Interval Breakdown</th>
-        </tr>` 
-        + fc.map(intv=>{
-            const [start,end] = intv.time.split("±")[0].split("-").map(t=>t.trim());
-            // assume intv.date is YYYY-MM-DD
-            const S = new Date(intv.date+"T"+start+":00Z");
-            const blocks = Object.keys(intv.breakdown).length;
-            const E = new Date(S.getTime() + blocks*30*60000);
-            return `<tr>
-              <td>${S.toISOString().slice(0,16).replace("T"," ")}</td>
-              <td>${E.toISOString().slice(0,16).replace("T"," ")}</td>
-              <td>${intv.predicted_strike_count}</td>
-              <td>${intv.avg_probability}</td>
-              <td>${intv.risk.toFixed(2)}</td>
-              <td><pre>${Object.entries(intv.breakdown)
-                          .map(([k,v])=>k+":"+v).join("; ")}</pre></td>
-            </tr>`;
+          <th>Bird Count</th><th>Bird Strike Probability</th>
+          <th>Risk</th><th>Breakdown</th>
+        </tr>` +
+        fc.map(intv => {
+          const [start, end] = intv.time.split("-").map(s => s.trim());
+          const start_dt = new Date(`${intv.date}T${start}:00Z`);
+          const slots = Object.keys(intv.breakdown).length;
+          const end_dt = new Date(start_dt.getTime() + slots * 30 * 60 * 1000);
+          return `<tr>
+            <td>${start_dt.toISOString().slice(0, 16).replace("T", " ")}</td>
+            <td>${end_dt.toISOString().slice(0, 16).replace("T", " ")}</td>
+            <td>${intv.predicted_strike_count}</td>
+            <td>${intv.avg_probability}</td>
+            <td>${intv.risk.toFixed(2)}</td>
+            <td><pre>${Object.entries(intv.breakdown)
+                      .map(([k, v]) => `${k}: ${v}`).join("; ")}</pre></td>
+          </tr>`;
         }).join("");
     }
   </script>
@@ -99,7 +102,5 @@
     </p>
   </footer>
 </body>
-
-
-</body>
 </html>
+
