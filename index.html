@@ -4,11 +4,38 @@
   <meta charset="UTF-8">
   <title>Portugal Bird-strike Risk</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    th { background: #f4f4f4; }
-    pre { white-space: pre-wrap; word-wrap: break-word; }
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+    }
+    select {
+      font-size: 1rem;
+      margin-right: 1rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background: #f4f4f4;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    footer {
+      text-align: center;
+      margin: 2em 0;
+      font-size: 0.9em;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -18,15 +45,20 @@
     Airport:
     <select id="icao-select"></select>
   </label>
+  <label>
+    Days to show:
+    <select id="days-select"></select>
+  </label>
 
-  <h2>XGBoost Machine Learning 30-minute Performance Metrics</h2>
+  <h2>XGBoost Machine Learning Performance Metrics</h2>
   <table id="xgb-table"></table>
 
-  <h2>Recurrent Neural Network Daily Forecast (00:00–23:59)</h2>
+  <h2>Recurrent Neural Network Daily Forecast</h2>
   <table id="forecast-table"></table>
 
   <script>
     let data;
+
     fetch("precomputed_portugal_metrics.json")
       .then(r => r.json())
       .then(d => {
@@ -38,16 +70,37 @@
           opt.text = icao;
           select.appendChild(opt);
         });
-        select.onchange = renderAll;
+        select.onchange = () => {
+          populateDays();
+          renderAll();
+        };
+        populateDays();
         renderAll();
       });
 
+    function populateDays() {
+      const icao = document.getElementById("icao-select").value;
+      const daySel = document.getElementById("days-select");
+      daySel.innerHTML = "";
+      const max = data[icao]?.rnn_forecast.length || 1;
+      for (let i = 1; i <= max; i++) {
+        let opt = document.createElement("option");
+        opt.value = i;
+        opt.text = i;
+        daySel.appendChild(opt);
+      }
+      daySel.value = Math.min(7, max);
+      daySel.onchange = renderAll;
+    }
+
     function renderAll() {
       const icao = document.getElementById("icao-select").value;
-      if (!icao) return;
+      const days = parseInt(document.getElementById("days-select").value);
+      if (!icao || !days) return;
+
       const m = data[icao];
 
-      // XGBoost metrics
+      // XGB table
       const xgb = m.xgb_metrics;
       const xt = document.getElementById("xgb-table");
       xt.innerHTML = `
@@ -57,11 +110,11 @@
         </tr>
         <tr>
           ${[xgb.accuracy, xgb.precision, xgb.recall, xgb.specificity, xgb.auc]
-            .map(v => `<td>${(+v).toFixed(2)}</td>`).join("")}
+             .map(v => `<td>${(+v).toFixed(2)}</td>`).join("")}
         </tr>`;
 
-      // Forecast rows
-      const fc = m.rnn_forecast;
+      // Forecast table
+      const fc = m.rnn_forecast.slice(0, days);
       const ft = document.getElementById("forecast-table");
       if (!fc || !fc.length) {
         ft.innerHTML = "<tr><td>No forecast data</td></tr>";
@@ -86,21 +139,15 @@
             <td>${intv.avg_probability}</td>
             <td>${intv.risk.toFixed(2)}</td>
             <td><pre>${Object.entries(intv.breakdown)
-                      .map(([k, v]) => `${k}: ${v}`).join("; ")}</pre></td>
+                        .map(([k, v]) => `${k}: ${v}`).join("; ")}</pre></td>
           </tr>`;
         }).join("");
     }
   </script>
 
-  <!-- ——————  Author & Link —————— -->
-  <footer style="text-align:center; margin:2em 0; font-size:0.9em; color:#666;">
-    <p>
-      Created by <strong>Luis Santos</strong> &middot;
-      <a href="https://www.linkedin.com/in/luisffmsantos/" target="_blank">
-        LinkedIn
-      </a>
-    </p>
+  <footer>
+    Created by <strong>Luis Santos</strong> ·
+    <a href="https://www.linkedin.com/in/luisffmsantos/" target="_blank">LinkedIn</a>
   </footer>
 </body>
 </html>
-
