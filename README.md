@@ -33,12 +33,9 @@ Best parameters and fold metrics are logged per airport.
 | **heads**   | *count* (MSE) &nbsp;&nbsp;•&nbsp;&nbsp; *prob* (binary-XE) |
 | **inputs**  | past features + XGBoost proba (stacked channel) |
 | **training**| early-stopping = 10, batch = 32, epochs ≤ 100 |
-
-Heads: 2
-
-Neurons: 130 per Head
-
-Number of Parameters: Approximately 1 Million
+| **Heads**| 2, one for ML other for RNN |
+| **Neurons**| 130 per head |
+| **Number of Parameters**| Approximately 1 Million |
 
 
 
