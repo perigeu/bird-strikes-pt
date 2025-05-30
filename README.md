@@ -40,7 +40,7 @@ Best parameters and fold metrics are logged per airport.
 
 
 
-##2. Risk Calculation
+## 2  Risk Calculation
 
 For each forecast interval:
 
@@ -69,14 +69,14 @@ Risk > 5.0 - High - Significant risk and safety — implement active mitigation
 
 
 
-##3. Usage
+## 3  Usage
 
 Precompute metrics & forecasts
 
 
 
 
-##4. Data
+## 4  Data
 
 Source: EASA Bird‑Strikes dataset
 
@@ -84,6 +84,6 @@ Species mass: Specific & generic bird masses
 
 
 
-##5. License
+## 5  License
 
 Luis Santos: perigeu@gmail.com | luis.santos@iseclisboa.pt
